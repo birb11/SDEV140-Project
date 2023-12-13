@@ -1,36 +1,55 @@
 """
 Program: project.py
 Author: Daven Kim
-Date: 12/3/2023
+Date: 12/12/2023
 
 This program records user names and respective account balances and displays them.
-It also allows users to withdraw and deposit to their account.
+The program uses a .csv file to record accounts and balances and to search users.
+It also allows users to withdraw and deposit to their account or close an account.
 """
 
 from breezypythongui import EasyFrame
 import csv
 from tempfile import NamedTemporaryFile
 import shutil
+from tkinter import PhotoImage
+
+
 
 class window(EasyFrame):
     def __init__(self):
         EasyFrame.__init__(self, title = "DK Banking App")
+        
+        self.cash = PhotoImage(file = 'cash.gif')
+        self.background = self.addLabel(text = '', row = 0, column = 0, rowspan = 2, columnspan = 3)
+        self.background["image"] = self.cash
+        
         self.addLabel(text = "Enter Name:", row = 0, column = 0)
         self.searchInput = self.addTextField(text = "", row = 0, column = 1)
         self.search = self.addButton(text = "Search", row = 1, column = 0, command = self.searchAccount)
         self.add = self.addButton(text = "New Account", row = 1, column = 1, command = self.addAccount)
+        self.exit = self.addButton(text = "Quit", row = 1, column = 2, command = self.byebye)
 
     def searchAccount(self):
         temp = self.searchInput.getText()
         try:
-            with open('data.csv', newline = '') as csvfile:
+            with open("data.csv", 'r') as csvfile:
                 accountreader = csv.DictReader(csvfile)
+                found = False
                 for row in accountreader:
-                    if row['name'] == temp:
-                        funds = row['balance']
-                        show = display()
-                        show.nameField["text"] = temp
-                        show.fundField["text"] = funds
+                    print(row)
+                    check = row["name"]
+                    if check.lower() == temp.lower():
+                        found = True
+                        funds = row["balance"]
+                        person = row["name"]
+                csvfile.close()
+            if found == False:
+                self.messageBox(title = "ERROR", message = "Input existing user")
+            else:
+                show = display()
+                show.nameField["text"] = person
+                show.fundField["text"] = funds
 
  
         except ValueError:
@@ -42,15 +61,28 @@ class window(EasyFrame):
 
         try:
             float(money)
-            with open('data.csv', 'w') as csvfile:
-                fieldnames = ['name', 'balance']
-                accountwriter = csv.DictWriter(csvfile, fieldnames = fieldnames)
-                accountwriter.writerow({'name': name, 'balance': money})
+            with open("data.csv", 'r') as csvfile:
+                fieldNames = ['name', 'balance']
+                accountreader = csv.DictReader(csvfile, fieldnames = fieldNames)
+                for row in accountreader:
+                    if row['name'].lower() == name.lower():
+                        self.messageBox(title = "ERROR", message = "User already exists.")
+                        csvfile.close()
+                        return
+                csvfile.close()
+            with open("data.csv", 'a') as csvfile:
+                fieldNames = ["name", "balance"]
+                accountwriter = csv.DictWriter(csvfile, fieldnames = fieldNames)
+                accountwriter.writerow({"name": name, "balance": money})
+                csvfile.close()
             
             self.searchInput.setText(name)
             self.searchAccount()
         except ValueError:
             self.messageBox(title = "ERROR", message = "Input valid account balance.")
+    
+    def byebye(self):
+        self.quit()
 
 class display(EasyFrame):
     def __init__(self):
@@ -61,19 +93,27 @@ class display(EasyFrame):
         self.fundField = self.addLabel(text = '', row = 1, column = 1)
         self.addButton(text = "Withdraw", row = 2, column = 0, command = self.withdraw)
         self.addButton(text = "Deposit", row = 2, column = 1, command = self.deposit)
-        self.addButton(text = "Exit", row = 2, column = 2, command = self.exit)
+        self.addButton(text = "Close Account", row = 3, column = 0, command = self.delete)
+        self.addButton(text = "Exit", row = 3, column = 1, command = self.exit)
+        self.updateButton = self.addButton(text = '', row = 4, column = 0, command = self.update)
+        self.refresh = PhotoImage(file = 'refresh1.gif')
+        self.updateButton['height'] = 30
+        self.updateButton['width'] = 30
+        self.updateButton["image"] = self.refresh
+        
+
 
     def withdraw(self):
         amount = self.prompterBox(title = "Withdraw", promptString = "Withdraw amount:")
         try:
             stuff = float(amount)
             if float(amount) > float(self.fundField['text']):
-                self.messageBox(title = 'ERROR', message = "Withdraw greater than account balance.")
+                self.messageBox(title = 'ERROR', message = "Insufficient funds.")
             else:
                 tempfile = NamedTemporaryFile('w+t', newline = '', delete = False)
                 with open('data.csv', newline = '') as csvfile, tempfile:
-                    fieldnames = ['name', 'balance']
-                    fundWriter = csv.DictWriter(tempfile, fieldnames = fieldnames)
+                    fieldNames = ['name', 'balance']
+                    fundWriter = csv.DictWriter(tempfile, fieldnames = fieldNames)
                     fundWriter.writeheader()
                     fundReader = csv.DictReader(csvfile)
                     for row in fundReader:
@@ -93,8 +133,8 @@ class display(EasyFrame):
             float(amount)
             tempfile = NamedTemporaryFile('w+t', newline = '', delete = False)
             with open('data.csv', newline = '') as csvfile, tempfile:
-                fieldnames = ['name', 'balance']
-                fundWriter = csv.DictWriter(tempfile, fieldnames = fieldnames)
+                fieldNames = ['name', 'balance']
+                fundWriter = csv.DictWriter(tempfile, fieldnames = fieldNames)
                 fundWriter.writeheader()
                 fundReader = csv.DictReader(csvfile)
                 for row in fundReader:
@@ -108,16 +148,32 @@ class display(EasyFrame):
         except ValueError:
             self.messageBox(title = "ERROR", message = "Input valid amount.")
 
+    def delete(self):
+        sure = self.prompterBox(title = "Are you sure?", promptString = "Enter y to confirm")
+        if sure == "y":
+            tempfile = NamedTemporaryFile('w+t', newline = '', delete = False)
+            with open('data.csv', newline = '') as csvfile, tempfile:
+                fieldNames = ['name', 'balance']
+                acctWriter = csv.DictWriter(tempfile, fieldnames = fieldNames)
+                acctWriter.writeheader()
+                acctReader = csv.DictReader(csvfile)
+                for row in acctReader:
+                    if row['name'] != self.nameField['text']:
+                        acctWriter.writerow({'name':row['name'], 'balance':row['balance']})
+            shutil.move(tempfile.name, 'data.csv')
+            self.destroy()            
+
     def exit(self):
-        self.quit()
+        self.destroy()
 
     def update(self):
-        with open('data.csv', newline = '') as csvfile:
-            fieldnames = ['name', 'balance']
-            accountReader = csv.DictReader(csvfile, fieldnames = fieldnames)
+        with open("data.csv", 'r') as csvfile:
+            fieldNames = ["name", "balance"]
+            accountReader = csv.DictReader(csvfile, fieldnames = fieldNames)
             for row in accountReader:
-                if row['name'] == self.nameField['text']:
-                    self.fundField['text'] = row['balance']
+                if row["name"] == self.nameField['text']:
+                    self.fundField["text"] = row['balance']
+            csvfile.close()
 
 
 
