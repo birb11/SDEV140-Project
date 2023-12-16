@@ -1,7 +1,7 @@
 """
-Program: project.py
+Program: KimDavenFinalProject.py
 Author: Daven Kim
-Date: 12/12/2023
+Date: 12/16/2023
 
 This program records user names and respective account balances and displays them.
 The program uses a .csv file to record accounts and balances and to search users.
