@@ -132,62 +132,66 @@ class display(EasyFrame):
                         else: #checks for name mismatch
                             fundWriter.writerow({'name':row['name'], 'balance':row['balance']}) #writes new dictionary entry without updating balance since no transaction performed
                 shutil.move(tempfile.name, 'data.csv') #copies tempfile into data.csv name
-                self.update()
-        except ValueError:
-            self.messageBox(title = "ERROR", message = "Input valid amount.")
+                self.update() #updates the window with new account balance
+        except ValueError: #except for nonnumeric account value entry
+            self.messageBox(title = "ERROR", message = "Input valid amount.") #message output for invalid entry
 
+    #defines deposit method that adds to account balance
     def deposit(self):
-        amount = self.prompterBox(title = "Deposit", promptString = "Deposit amount:")
-        try:
-            float(amount)
-            tempfile = NamedTemporaryFile('w+t', newline = '', delete = False)
-            with open('data.csv', newline = '') as csvfile, tempfile:
-                fieldNames = ['name', 'balance']
-                fundWriter = csv.DictWriter(tempfile, fieldnames = fieldNames)
-                fundWriter.writeheader()
-                fundReader = csv.DictReader(csvfile)
-                for row in fundReader:
-                    if row['name'] == self.nameField['text']:
-                        plus = float(row['balance']) + float(amount)
-                        fundWriter.writerow({'name':row['name'], 'balance':str(plus)})
-                    else:
-                        fundWriter.writerow({'name':row['name'], 'balance':row['balance']})
-            shutil.move(tempfile.name, 'data.csv')
-            self.update()
-        except ValueError:
-            self.messageBox(title = "ERROR", message = "Input valid amount.")
+        amount = self.prompterBox(title = "Deposit", promptString = "Deposit amount:") #prompts user to input deposit amount and returns it in amount
+        try: #try except clause to verify user input in amount
+            float(amount) #check to ensure amount is a numeric value
+            tempfile = NamedTemporaryFile('w+t', newline = '', delete = False) #creates tempfile as a NamedTemporaryFile to update balance
+            with open('data.csv', newline = '') as csvfile, tempfile: #opens data.csv as csvfile and tempfile
+                fieldNames = ['name', 'balance'] #defines fieldNames for DictWriter method
+                fundWriter = csv.DictWriter(tempfile, fieldnames = fieldNames) #fundWriter writes dictionary entries to tempfile
+                fundWriter.writeheader() #writes header in file
+                fundReader = csv.DictReader(csvfile) #fundReader imports dictionary entries from csvfile
+                for row in fundReader: #iterates through each dictionary entry
+                    if row['name'] == self.nameField['text']: #checks if name matches search name
+                        plus = float(row['balance']) + float(amount) #adds deposit amount and balance in plus
+                        fundWriter.writerow({'name':row['name'], 'balance':str(plus)}) #writes new dictionary entry with new balance
+                    else: #executes when name doesn't match depositing account
+                        fundWriter.writerow({'name':row['name'], 'balance':row['balance']}) #copies dictionary entry to tempfile
+            shutil.move(tempfile.name, 'data.csv') #replaces data.csv with tempfile
+            self.update() #update window with new balance
+        except ValueError: #executes when nonnumeric entry
+            self.messageBox(title = "ERROR", message = "Input valid amount.") #output message box stating invalid amount
 
+    #defines delete method that removes accounts from dictionary
     def delete(self):
-        sure = self.prompterBox(title = "Are you sure?", promptString = "Enter y to confirm")
-        if sure == "y":
-            tempfile = NamedTemporaryFile('w+t', newline = '', delete = False)
-            with open('data.csv', newline = '') as csvfile, tempfile:
-                fieldNames = ['name', 'balance']
-                acctWriter = csv.DictWriter(tempfile, fieldnames = fieldNames)
-                acctWriter.writeheader()
-                acctReader = csv.DictReader(csvfile)
-                for row in acctReader:
-                    if row['name'] != self.nameField['text']:
-                        acctWriter.writerow({'name':row['name'], 'balance':row['balance']})
-            shutil.move(tempfile.name, 'data.csv')
-            self.destroy()            
+        sure = self.prompterBox(title = "Are you sure?", promptString = "Enter y to confirm") #prompts the user to confirm and returns entry to sure
+        if sure == "y": #checks to see if sure matches y
+            tempfile = NamedTemporaryFile('w+t', newline = '', delete = False) #creates tempfile as NamedTemporaryFile to update csvfile after removing
+            with open('data.csv', newline = '') as csvfile, tempfile: #opens data.csv with csvfile and tempfile
+                fieldNames = ['name', 'balance'] #defines fieldNames with dictionary keys
+                acctWriter = csv.DictWriter(tempfile, fieldnames = fieldNames) #acctWriter writes dictionary entries to tempfile
+                acctWriter.writeheader() #writes header in tempfile
+                acctReader = csv.DictReader(csvfile) #acctReader imports data.csv entries as rows of dictionary entries
+                for row in acctReader: #checks each dictionary entry
+                    if row['name'] != self.nameField['text']: #checks to see if deleting account name doesn't match with entry
+                        acctWriter.writerow({'name':row['name'], 'balance':row['balance']}) #saves account dictionary data
+            shutil.move(tempfile.name, 'data.csv') #overwrites data.csv with tempfile data
+            self.destroy() #closes window with deleted account info
 
+    #defines exit method using destroy method
     def exit(self):
-        self.destroy()
+        self.destroy() #closes window
 
+    #defines update method that refreshes current balances
     def update(self):
-        with open("data.csv", 'r') as csvfile:
-            fieldNames = ["name", "balance"]
-            accountReader = csv.DictReader(csvfile, fieldnames = fieldNames)
-            for row in accountReader:
-                if row["name"] == self.nameField['text']:
-                    self.fundField["text"] = row['balance']
-            csvfile.close()
+        with open("data.csv", 'r') as csvfile: #opens data.csv as csvfile
+            fieldNames = ["name", "balance"] #defines fieldNames with dictionary keys
+            accountReader = csv.DictReader(csvfile, fieldnames = fieldNames) #accountReader imports csvfile entries
+            for row in accountReader: #checks each dictionary entries
+                if row["name"] == self.nameField['text']: #checks to see if name matches 
+                    self.fundField["text"] = row['balance'] #sets the fundField to current balance in csvfile
+            csvfile.close() #close csvfile when finished
 
 
-
+#define main executing function
 def main():
-    window().mainloop()
+    window().mainloop() #performs mainloop to keep window open and awaiting user input
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": #if program is run in the terminal
+    main() #executes main function
