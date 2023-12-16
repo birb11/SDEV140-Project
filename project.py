@@ -37,13 +37,12 @@ class window(EasyFrame):
     def searchAccount(self):
         #temp is the input from the entry field
         temp = self.searchInput.getText()
-        #try-except may not be necessary here, checks for ValueError
+        #try-except may not be necessary here, checks for IOError if file not found
         try: 
             with open("data.csv", 'r') as csvfile: #open the data.csv file in read mode
                 accountreader = csv.DictReader(csvfile) #accountreader imports rows of dictionary entries
                 found = False #value for locating the name in dictionary or not
                 for row in accountreader: #checking each row for user
-                    print(row)
                     check = row["name"] #check is temporary value for name in the dictionary
                     if check.lower() == temp.lower(): #compares name values without being case sensitive
                         found = True #set found to true if name matches
@@ -58,8 +57,8 @@ class window(EasyFrame):
                 show.fundField["text"] = funds #set account value field in new window
 
  
-        except ValueError: #check for ValueError
-            self.messageBox(title = "ERROR", message = "Input existing user") #output when ValueError occurs
+        except IOError: #check for IOError
+            self.messageBox(title = "ERROR", message = "Locate data file.") #output when IOError occurs
 
     #defining addAccount method used to add account entries to dictionary data file
     def addAccount(self): 
@@ -88,6 +87,8 @@ class window(EasyFrame):
             self.searchAccount() #performs a search on newly added user to create new window with account details
         except ValueError: #error check if account balance entry is not a valid number
             self.messageBox(title = "ERROR", message = "Input valid account balance.") #message outputted in new box if invalid number entered
+        except IOError: #error check to see if data.csv file is able to be located
+            self.messageBox(title = "ERROR", message = "Locate data file.") #message output when data.csv file not in current directory
 
     #defined byebye method which quits the program
     def byebye(self):
